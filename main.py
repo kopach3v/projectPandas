@@ -13,6 +13,8 @@ def buy_sell(reverse_df):
     count_sell = 0
     count_buy = 0
     pnl = 0.0
+    amount_to_spend_usdt = min(balance_usdt, 100.0)
+
 
     buy_wait_trades = []
     buy_sold_trades = []
@@ -20,48 +22,53 @@ def buy_sell(reverse_df):
 
     # previous_open_price = None
     for index, row in reverse_df.iterrows():
-        # if previous_open_price is not None:
-        if row.Open > row.Close:
-            print(f"{row.Open}, Красная свеча")
+        date, open, close, high, low = row.Date, row.Open, row.Close, row.High, row.Low
+        if open > close:
+            print(f"{open}, Красная свеча")
             # Формула покупки Btc
-            if balance_usdt > 0:
-                buy_orders = {}
-                amount_to_spend_usdt = min(balance_usdt, 100.0)
-                amount_bought_btc = amount_to_spend_usdt / row.Open
+            if balance_usdt >= 100:
+                buy_dict = {}
+
+                amount_bought_btc = amount_to_spend_usdt / close
                 balance_btc += amount_bought_btc
                 balance_usdt -= amount_to_spend_usdt
 
-                buy_orders['side'] = 'BUY'
-                buy_orders['time'] = row.Date
-                buy_orders['price'] = row.Open
-                buy_orders['amount'] = f'{amount_bought_btc:.6f}'
-                buy_orders['qty'] = amount_to_spend_usdt
-                buy_wait_trades.append(buy_orders)
-                trades.append(buy_orders)
+                buy_dict['side'] = 'BUY'
+                buy_dict['time'] = date
+                buy_dict['price'] = close
+                buy_dict['amount'] = f'{amount_bought_btc:.6f}'
+                buy_dict['qty'] = amount_to_spend_usdt
+                buy_wait_trades.append(buy_dict)
+                trades.append(buy_dict)
                 count_buy += 1
 
-                print(f"Куплено {amount_bought_btc:.4f} BTC по цене {row.Open} USDT")
+                print(f"Куплено {amount_bought_btc:.4f} BTC по цене {close} USDT")
 
-        elif len(buy_wait_trades) >0 and buy_wait_trades[0]['price']  < row.Open  :
-            print(f"{row.Open}, Зеленая свеча")
-            if balance_btc > 0.00001:
-                sell_orders = {}
-                amount_to_spend_btc = balance_btc
-                amount_bought_usdt = amount_to_spend_btc * row.Open
-                balance_btc -= amount_to_spend_btc
-                balance_usdt += amount_bought_usdt
+        elif len(buy_wait_trades) >0:
+            print(f"{open}, Зеленая свеча")
+            for item in buy_wait_trades:
+                buy_price = item['price']
+                if buy_price < close and balance_btc > 0:
+                    sell_dict = {}
+                    amount_to_spend_btc = balance_btc
+                    amount_bought_usdt = amount_to_spend_btc * close
+                    balance_btc -= amount_to_spend_btc
+                    balance_usdt += amount_bought_usdt
 
-                sell_orders['side'] = 'SELL'
-                sell_orders['time'] = row.Date
-                sell_orders['price'] = row.Open
-                sell_orders['amount'] = f'{amount_to_spend_btc:.6f}'
-                sell_orders['qty'] = f'{amount_bought_usdt:.2f}'
-                trades.append(sell_orders)
-                buy_sold_trades.append(buy_wait_trades[0])
-                buy_wait_trades.pop(0)
-                count_sell += 1
+                    sell_dict['side'] = 'SELL'
+                    sell_dict['time'] = date
+                    sell_dict['price'] = close
+                    sell_dict['amount'] = f'{amount_to_spend_btc:.6f}'
+                    sell_dict['qty'] = f'{amount_bought_usdt:.2f}'
+                    trades.append(sell_dict)
+                    buy_sold_trades.append(buy_wait_trades[0])
+                    buy_wait_trades.pop(0)
+                    count_sell += 1
 
-                print(f"Продано {amount_to_spend_btc:.4f} BTC по цене {row.Open} USDT")
+                    print(f"Продано {amount_to_spend_btc:.4f} BTC по цене {close} USDT")
+
+
+
 
     print(f'Usdt: {balance_usdt}, Btc:{balance_btc}, Продаж:{count_sell}, Покупок: {count_buy}, PNL: {pnl}, {trades}')
     print(f'В ожидании на продажу: {buy_wait_trades}, Продано: {buy_sold_trades}')
