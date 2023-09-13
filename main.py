@@ -41,33 +41,35 @@ def buy_sell(reverse_df):
                 trades.append(buy_dict)
                 count_buy += 1
 
-                print(f"Куплено {amount_bought_btc:.4f} BTC по цене {close} USDT")
+                print(f"Куплено {amount_bought_btc:.4f} BTC по цене {close} USDT, БАЛАНС: {balance_usdt},{balance_btc:.4f}")
 
         elif len(buy_wait_trades) > 0:
             print(f"{open}, Зеленая свеча")
             # for item in buy_wait_trades:
             #     buy_price = item['price']
-            cheapest_item = min(buy_wait_trades, key=lambda x: x['price'])
-            if cheapest_item['price'] < close and balance_btc > 0:
-                sell_dict = {}
-                amount_to_spend_btc = balance_btc
-                amount_bought_usdt = amount_to_spend_btc * close
-                balance_btc -= amount_to_spend_btc
-                balance_usdt += amount_bought_usdt
+            sold_dicts = []
+            for item in buy_wait_trades:
+                if item['price'] < close and balance_btc > 0:
+                    sell_dict = {}
+                    amount_to_spend_btc = float(item['amount'])
+                    amount_bought_usdt = amount_to_spend_btc * close
+                    balance_btc -= amount_to_spend_btc
+                    balance_usdt += amount_bought_usdt
 
-                sell_dict['side'] = 'SELL'
-                sell_dict['time'] = date
-                sell_dict['price'] = close
-                sell_dict['amount'] = f'{amount_to_spend_btc:.6f}'
-                sell_dict['qty'] = f'{amount_bought_usdt:.2f}'
-                trades.append(sell_dict)
-                buy_sold_trades.append(buy_wait_trades[0])
-                buy_wait_trades.remove(cheapest_item)
-                count_sell += 1
+                    sell_dict['side'] = 'SELL'
+                    sell_dict['time'] = date
+                    sell_dict['price'] = close
+                    sell_dict['amount'] = f'{amount_to_spend_btc:.6f}'
+                    sell_dict['qty'] = f'{amount_bought_usdt:.2f}'
+                    trades.append(sell_dict)
+                    buy_sold_trades.append(buy_wait_trades[0])
+                    sold_dicts.append(item)
+                    count_sell += 1
 
-                print(f"Продано {cheapest_item}, по цене: {close}")
-                # print(f"Продано {amount_to_spend_btc:.4f} BTC по цене {close} USDT")
-
+                    print(f"Продано {item}, по цене: {close}, БАЛАНС: {balance_usdt},{balance_btc}")
+                    # print(f"Продано {amount_to_spend_btc:.4f} BTC по цене {close} USDT")
+            for items in sold_dicts:
+                buy_wait_trades.remove(items)
     # print(f'Usdt: {balance_usdt}, Btc:{balance_btc}, Продаж:{count_sell}, Покупок: {count_buy}, PNL: {pnl}, {trades}')
     # print(f'В ожидании на продажу: {buy_wait_trades}, Продано: {buy_sold_trades}')
 
