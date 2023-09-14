@@ -4,7 +4,7 @@ from datetime import datetime
 
 ## ['Unix', 'Date', 'Symbol', 'Open', 'High', 'Low', 'Close', 'Volume BTC','Volume USDT', 'tradecount']
 df = pd.read_csv(r"C:\Users\Igor\PycharmProjects\projectPandas\venv\Binance_BTCUSDT_d.csv")
-reverse_df = df[::-1].head(50)
+reverse_df = df[::-1].head(30)
 
 
 def buy_sell(reverse_df):
@@ -12,6 +12,7 @@ def buy_sell(reverse_df):
     balance_btc = 0.0
     count_sell = 0
     count_buy = 0
+
     pnl = 0.0
     amount_to_spend_usdt = 100
 
@@ -22,13 +23,15 @@ def buy_sell(reverse_df):
     buy_prices = []
     sell_dates = []
     sell_prices = []
-
+    sold_count_in1 = []
 
     fig = go.Figure([go.Candlestick(x=reverse_df['Date'],
                                     open=reverse_df['Open'],
                                     high=reverse_df['High'],
                                     low=reverse_df['Low'],
                                     close=reverse_df['Close'])])
+    fig.update_layout(xaxis_rangeslider_visible=False)
+    config = {'scrollZoom': True}
 
     # previous_open_price = None
     for index, row in reverse_df.iterrows():
@@ -58,6 +61,8 @@ def buy_sell(reverse_df):
 
         elif len(buy_wait_trades) > 0:
             print(f"{open}, Зеленая свеча")
+            sold_count = 0
+
             # for item in buy_wait_trades:
             #     buy_price = item['price']
             sold_dicts = []
@@ -79,7 +84,10 @@ def buy_sell(reverse_df):
                     sold_dicts.append(item)
                     sell_dates.append(date)
                     sell_prices.append(close)
+                    sold_count +=1
+                    sold_count_in1.append(sold_count)
                     count_sell += 1
+                    pnl = (close*amount_to_spend_btc)-(item['price']*amount_to_spend_btc)
 
                     print(f"Продано {item}, по цене: {close}, БАЛАНС: {balance_usdt},{balance_btc}")
                     # print(f"Продано {amount_to_spend_btc:.4f} BTC по цене {close} USDT")
@@ -102,11 +110,28 @@ def buy_sell(reverse_df):
         mode="markers",
         marker_symbol="triangle-down",  # Символ "▲" для покупок
         marker=dict(size=10, color="red"),
-        name="Продажа"
+        name=f"Продажа"
     ))
+    # for i, x_date in enumerate(sell_dates):
+    #     fig.add_trace(go.Scatter(
+    #         x=[x_date],
+    #         y=sell_prices,  # Определяем высоту текста над свечей
+    #         mode='text',
+    #         text=[f"{sold_count_in1[i]}"],
+    #         showlegend=False
+    #     ))
 
-
-    fig.show()
+    fig.add_annotation(
+        text=f'PNL: {pnl:.2f}$',
+        xref="paper",
+        yref="paper",
+        x=0.95,
+        y=0.05,
+        showarrow=False,
+        font=dict(size=12)
+    )
+    fig.show(config=config)
+    print(pnl)
 
 buy_sell(reverse_df)
 
