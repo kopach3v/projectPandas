@@ -18,6 +18,17 @@ def buy_sell(reverse_df):
     buy_wait_trades = []
     buy_sold_trades = []
     trades = []
+    buy_dates = []
+    buy_prices = []
+    sell_dates = []
+    sell_prices = []
+
+
+    fig = go.Figure([go.Candlestick(x=reverse_df['Date'],
+                                    open=reverse_df['Open'],
+                                    high=reverse_df['High'],
+                                    low=reverse_df['Low'],
+                                    close=reverse_df['Close'])])
 
     # previous_open_price = None
     for index, row in reverse_df.iterrows():
@@ -39,6 +50,8 @@ def buy_sell(reverse_df):
                 buy_dict['qty'] = amount_to_spend_usdt
                 buy_wait_trades.append(buy_dict)
                 trades.append(buy_dict)
+                buy_dates.append(date)
+                buy_prices.append(close)
                 count_buy += 1
 
                 print(f"Куплено {amount_bought_btc:.4f} BTC по цене {close} USDT, БАЛАНС: {balance_usdt},{balance_btc:.4f}")
@@ -64,6 +77,8 @@ def buy_sell(reverse_df):
                     trades.append(sell_dict)
                     buy_sold_trades.append(buy_wait_trades[0])
                     sold_dicts.append(item)
+                    sell_dates.append(date)
+                    sell_prices.append(close)
                     count_sell += 1
 
                     print(f"Продано {item}, по цене: {close}, БАЛАНС: {balance_usdt},{balance_btc}")
@@ -72,15 +87,29 @@ def buy_sell(reverse_df):
                 buy_wait_trades.remove(items)
     # print(f'Usdt: {balance_usdt}, Btc:{balance_btc}, Продаж:{count_sell}, Покупок: {count_buy}, PNL: {pnl}, {trades}')
     # print(f'В ожидании на продажу: {buy_wait_trades}, Продано: {buy_sold_trades}')
+    fig.add_trace(go.Scatter(
+        x=buy_dates,
+        y=buy_prices,  # Выберите подходящую y-координату для маркеров покупки
+        mode="markers",
+        marker_symbol="triangle-up",  # Символ "▲" для покупок
+        marker=dict(size=10, color="green"),
+        name="Покупка"
+    ))
 
+    fig.add_trace(go.Scatter(
+        x=sell_dates,
+        y=sell_prices,  # Выберите подходящую y-координату для маркеров покупки
+        mode="markers",
+        marker_symbol="triangle-down",  # Символ "▲" для покупок
+        marker=dict(size=10, color="red"),
+        name="Продажа"
+    ))
+
+
+    fig.show()
 
 buy_sell(reverse_df)
-# fig = go.Figure([go.Candlestick(x=reverse_df['Date'],
-#                 open = reverse_df['Open'],
-#                 high = reverse_df['High'],
-#                 low=reverse_df['Low'],
-#                 close = reverse_df['Close'])])
-# fig.show()
+
 
 
 # print(reverse_df.columns)
